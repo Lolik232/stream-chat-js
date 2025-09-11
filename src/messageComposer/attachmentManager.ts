@@ -46,8 +46,8 @@ export type AttachmentManagerOptions = {
 };
 
 const initState = ({
-  message,
-}: {
+                     message,
+                   }: {
   message?: DraftMessage | LocalMessage;
 }): AttachmentManagerState => ({
   attachments: (message?.attachments ?? [])
@@ -72,12 +72,12 @@ export class AttachmentManager {
     attachmentsById: Record<string, LocalAttachment>;
     attachments: LocalAttachment[];
   };
-
+  
   constructor({ composer, message }: AttachmentManagerOptions) {
     this.composer = composer;
     this.state = new StateStore<AttachmentManagerState>(initState({ message }));
     this.attachmentsByIdGetterCache = { attachmentsById: {}, attachments: [] };
-
+    
     this.preUploadMiddlewareExecutor = new AttachmentPreUploadMiddlewareExecutor({
       composer,
     });
@@ -85,10 +85,10 @@ export class AttachmentManager {
       composer,
     });
   }
-
+  
   get attachmentsById() {
     const { attachments } = this.state.getLatestValue();
-
+    
     if (attachments !== this.attachmentsByIdGetterCache.attachments) {
       this.attachmentsByIdGetterCache.attachments = attachments;
       this.attachmentsByIdGetterCache.attachmentsById = attachments.reduce<
@@ -96,103 +96,103 @@ export class AttachmentManager {
       >((newAttachmentsById, attachment) => {
         // should never happen but does not hurt to check
         if (!attachment.localMetadata.id) return newAttachmentsById;
-
+        
         newAttachmentsById[attachment.localMetadata.id] ??= attachment;
-
+        
         return newAttachmentsById;
       }, {});
     }
-
+    
     return this.attachmentsByIdGetterCache.attachmentsById;
   }
-
+  
   get client() {
     return this.composer.client;
   }
-
+  
   get channel() {
     return this.composer.channel;
   }
-
+  
   get config() {
     return this.composer.config.attachments;
   }
-
+  
   get acceptedFiles() {
     return this.config.acceptedFiles;
   }
-
+  
   set acceptedFiles(acceptedFiles: AttachmentManagerConfig['acceptedFiles']) {
     this.composer.updateConfig({ attachments: { acceptedFiles } });
   }
-
+  
   /*
   @deprecated attachments can be filtered using injecting pre-upload middleware
    */
   get fileUploadFilter() {
     return this.config.fileUploadFilter;
   }
-
+  
   /*
   @deprecated attachments can be filtered using injecting pre-upload middleware
    */
   set fileUploadFilter(fileUploadFilter: AttachmentManagerConfig['fileUploadFilter']) {
     this.composer.updateConfig({ attachments: { fileUploadFilter } });
   }
-
+  
   get maxNumberOfFilesPerMessage() {
     return this.config.maxNumberOfFilesPerMessage;
   }
-
+  
   set maxNumberOfFilesPerMessage(
     maxNumberOfFilesPerMessage: AttachmentManagerConfig['maxNumberOfFilesPerMessage'],
   ) {
     if (maxNumberOfFilesPerMessage === this.maxNumberOfFilesPerMessage) return;
     this.composer.updateConfig({ attachments: { maxNumberOfFilesPerMessage } });
   }
-
+  
   setCustomUploadFn = (doUploadRequest: UploadRequestFn) => {
     this.composer.updateConfig({ attachments: { doUploadRequest } });
   };
-
+  
   get attachments() {
     return this.state.getLatestValue().attachments;
   }
-
+  
   get hasUploadPermission() {
     return !!(
       this.channel.data?.own_capabilities as ChannelResponse['own_capabilities']
     )?.includes('upload-file');
   }
-
+  
   get isUploadEnabled() {
     return this.hasUploadPermission && this.availableUploadSlots > 0;
   }
-
+  
   get successfulUploads() {
     return this.getUploadsByState('finished');
   }
-
+  
   get successfulUploadsCount() {
     return this.successfulUploads.length;
   }
-
+  
   get uploadsInProgressCount() {
     return this.getUploadsByState('uploading').length;
   }
-
+  
   get failedUploadsCount() {
     return this.getUploadsByState('failed').length;
   }
-
+  
   get blockedUploadsCount() {
     return this.getUploadsByState('blocked').length;
   }
-
+  
   get pendingUploadsCount() {
     return this.getUploadsByState('pending').length;
   }
-
+  
   get availableUploadSlots() {
     return (
       this.config.maxNumberOfFilesPerMessage -
@@ -200,23 +200,23 @@ export class AttachmentManager {
       this.uploadsInProgressCount
     );
   }
-
+  
   getUploadsByState(state: AttachmentLoadingState) {
     return Object.values(this.attachments).filter(
       ({ localMetadata }) => localMetadata.uploadState === state,
     );
   }
-
+  
   initState = ({ message }: { message?: DraftMessage | LocalMessage } = {}) => {
     this.state.next(initState({ message }));
   };
-
+  
   getAttachmentIndex = (localId: string) => {
     const attachmentsById = this.attachmentsById;
-
+    
     return this.attachments.indexOf(attachmentsById[localId]);
   };
-
+  
   private prepareAttachmentUpdate = (attachmentToUpdate: LocalAttachment) => {
     const stateAttachments = this.attachments;
     const attachments = [...this.attachments];
@@ -238,14 +238,14 @@ export class AttachmentManager {
     }
     return null;
   };
-
+  
   updateAttachment = (attachmentToUpdate: LocalAttachment) => {
     const updatedAttachments = this.prepareAttachmentUpdate(attachmentToUpdate);
     if (updatedAttachments) {
       this.state.partialNext({ attachments: updatedAttachments });
     }
   };
-
+  
   upsertAttachments = (attachmentsToUpsert: LocalAttachment[]) => {
     if (!attachmentsToUpsert.length) return;
     let attachments = [...this.attachments];
@@ -267,7 +267,7 @@ export class AttachmentManager {
       this.state.partialNext({ attachments });
     }
   };
-
+  
   removeAttachments = (localAttachmentIds: string[]) => {
     this.state.partialNext({
       attachments: this.attachments.filter(
@@ -275,7 +275,7 @@ export class AttachmentManager {
       ),
     });
   };
-
+  
   getUploadConfigCheck = async (
     fileLike: FileReference | FileLike,
   ): Promise<UploadPermissionCheckResult> => {
@@ -290,7 +290,7 @@ export class AttachmentManager {
       ? appSettings?.app?.image_upload_config
       : appSettings?.app?.file_upload_config;
     if (!uploadConfig) return { uploadBlocked: false };
-
+    
     const {
       allowed_file_extensions,
       allowed_mime_types,
@@ -298,10 +298,11 @@ export class AttachmentManager {
       blocked_mime_types,
       size_limit,
     } = uploadConfig;
-
+    
     const sizeLimit = size_limit || DEFAULT_UPLOAD_SIZE_LIMIT_BYTES;
+    console.log(`Stream Chat: ${sizeLimit}`);
     const mimeType = fileLike.type;
-
+    
     if (isFile(fileLike) || isFileReference(fileLike)) {
       if (
         allowed_file_extensions?.length &&
@@ -311,7 +312,7 @@ export class AttachmentManager {
       ) {
         return { uploadBlocked: true, reason: 'allowed_file_extensions' };
       }
-
+      
       if (
         blocked_file_extensions?.length &&
         blocked_file_extensions.some((ext) =>
@@ -321,28 +322,28 @@ export class AttachmentManager {
         return { uploadBlocked: true, reason: 'blocked_file_extensions' };
       }
     }
-
+    
     if (
       allowed_mime_types?.length &&
       !allowed_mime_types.some((type) => type.toLowerCase() === mimeType?.toLowerCase())
     ) {
       return { uploadBlocked: true, reason: 'allowed_mime_types' };
     }
-
+    
     if (
       blocked_mime_types?.length &&
       blocked_mime_types.some((type) => type.toLowerCase() === mimeType?.toLowerCase())
     ) {
       return { uploadBlocked: true, reason: 'blocked_mime_types' };
     }
-
+    
     if (fileLike.size && fileLike.size > sizeLimit) {
       return { uploadBlocked: true, reason: 'size_limit' };
     }
-
+    
     return { uploadBlocked: false };
   };
-
+  
   static toLocalUploadAttachment = (
     fileLike: FileReference | FileLike,
   ): LocalUploadAttachment => {
@@ -350,11 +351,11 @@ export class AttachmentManager {
       isFileReference(fileLike) || isFile(fileLike)
         ? fileLike
         : createFileFromBlobs({
-            blobsArray: [fileLike],
-            fileName: generateFileName(fileLike.type),
-            mimeType: fileLike.type,
-          });
-
+          blobsArray: [fileLike],
+          fileName: generateFileName(fileLike.type),
+          mimeType: fileLike.type,
+        });
+    
     const localAttachment: LocalUploadAttachment = {
       file_size: file.size,
       mime_type: file.type,
@@ -365,31 +366,31 @@ export class AttachmentManager {
       },
       type: getAttachmentTypeFromMimeType(file.type),
     };
-
+    
     localAttachment[isImageFile(file) ? 'fallback' : 'title'] = file.name;
-
+    
     if (isImageFile(file)) {
       localAttachment.localMetadata.previewUri = isFileReference(fileLike)
         ? fileLike.uri
         : URL.createObjectURL?.(fileLike);
-
+      
       if (isFileReference(fileLike) && fileLike.height && fileLike.width) {
         localAttachment.original_height = fileLike.height;
         localAttachment.original_width = fileLike.width;
       }
     }
-
+    
     if (isFileReference(fileLike) && fileLike.thumb_url) {
       localAttachment.thumb_url = fileLike.thumb_url;
     }
-
+    
     if (isFileReference(fileLike) && fileLike.duration) {
       localAttachment.duration = fileLike.duration;
     }
-
+    
     return localAttachment;
   };
-
+  
   // @deprecated use AttachmentManager.toLocalUploadAttachment(file)
   fileToLocalUploadAttachment = async (
     fileLike: FileReference | FileLike,
@@ -402,10 +403,10 @@ export class AttachmentManager {
     localAttachment.localMetadata.uploadState = uploadPermissionCheck.uploadBlocked
       ? 'blocked'
       : 'pending';
-
+    
     return localAttachment;
   };
-
+  
   private ensureLocalUploadAttachment = async (
     attachment: Partial<LocalUploadAttachment>,
   ) => {
@@ -417,7 +418,7 @@ export class AttachmentManager {
       });
       return;
     }
-
+    
     if (!attachment.localMetadata.id) {
       this.client.notifications.addError({
         message: 'Local upload attachment missing local id',
@@ -426,9 +427,9 @@ export class AttachmentManager {
       });
       return;
     }
-
+    
     if (!this.fileUploadFilter(attachment)) return;
-
+    
     const newAttachment = await this.fileToLocalUploadAttachment(
       attachment.localMetadata.file,
     );
@@ -437,7 +438,7 @@ export class AttachmentManager {
     }
     return newAttachment;
   };
-
+  
   /**
    * Method to perform the default upload behavior without checking for custom upload functions
    * to prevent recursive calls
@@ -450,42 +451,42 @@ export class AttachmentManager {
         fileLike.type,
       );
     }
-
+    
     const file = isFile(fileLike)
       ? fileLike
       : createFileFromBlobs({
-          blobsArray: [fileLike],
-          fileName: generateFileName(fileLike.type),
-          mimeType: fileLike.type,
-        });
-
+        blobsArray: [fileLike],
+        fileName: generateFileName(fileLike.type),
+        mimeType: fileLike.type,
+      });
+    
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { duration, ...result } =
       await this.channel[isImageFile(fileLike) ? 'sendImage' : 'sendFile'](file);
     return result;
   };
-
+  
   /**
    * todo: docs how to customize the image and file upload by overriding do
    */
-
+  
   doUploadRequest = async (fileLike: FileReference | FileLike) => {
     const customUploadFn = this.config.doUploadRequest;
     if (customUploadFn) {
       return await customUploadFn(fileLike);
     }
-
+    
     return this.doDefaultUploadRequest(fileLike);
   };
-
+  
   // @deprecated use attachmentManager.uploadFile(file)
   uploadAttachment = async (attachment: LocalUploadAttachment) => {
     if (!this.isUploadEnabled) return;
-
+    
     const localAttachment = await this.ensureLocalUploadAttachment(attachment);
-
+    
     if (typeof localAttachment === 'undefined') return;
-
+    
     if (localAttachment.localMetadata.uploadState === 'blocked') {
       this.upsertAttachments([localAttachment]);
       this.client.notifications.addError({
@@ -503,7 +504,7 @@ export class AttachmentManager {
       });
       return localAttachment;
     }
-
+    
     this.upsertAttachments([
       {
         ...attachment,
@@ -513,7 +514,7 @@ export class AttachmentManager {
         },
       },
     ]);
-
+    
     let response: MinimumUploadRequestResult;
     try {
       response = await this.doUploadRequest(localAttachment.localMetadata.file);
@@ -526,7 +527,7 @@ export class AttachmentManager {
           uploadState: 'failed',
         },
       };
-
+      
       this.client.notifications.addError({
         message: 'Error uploading attachment',
         origin: {
@@ -539,20 +540,20 @@ export class AttachmentManager {
           originalError: error instanceof Error ? error : undefined,
         },
       });
-
+      
       this.updateAttachment(failedAttachment);
       return failedAttachment;
     }
-
+    
     if (!response) {
       // Copied this from useImageUpload / useFileUpload.
-
+      
       // If doUploadRequest returns any falsy value, then don't create the upload preview.
       // This is for the case if someone wants to handle failure on app level.
       this.removeAttachments([attachment.localMetadata.id]);
       return;
     }
-
+    
     const uploadedAttachment: LocalUploadAttachment = {
       ...attachment,
       localMetadata: {
@@ -560,7 +561,7 @@ export class AttachmentManager {
         uploadState: 'finished',
       },
     };
-
+    
     if (isLocalImageAttachment(uploadedAttachment)) {
       if (uploadedAttachment.localMetadata.previewUri) {
         URL.revokeObjectURL(uploadedAttachment.localMetadata.previewUri);
@@ -573,12 +574,12 @@ export class AttachmentManager {
     if (response.thumb_url) {
       (uploadedAttachment as LocalNotImageAttachment).thumb_url = response.thumb_url;
     }
-
+    
     this.updateAttachment(uploadedAttachment);
-
+    
     return uploadedAttachment;
   };
-
+  
   uploadFile = async (file: FileReference | FileLike) => {
     const preUpload = await this.preUploadMiddlewareExecutor.execute({
       eventName: 'prepare',
@@ -587,19 +588,19 @@ export class AttachmentManager {
       },
       mode: 'concurrent',
     });
-
+    
     let attachment: LocalUploadAttachment = preUpload.state.attachment;
-
+    
     if (preUpload.status === 'discard') return attachment;
     // todo: remove with the next major release as filtering can be done in middleware
     // should we return the attachment object?
     if (!this.fileUploadFilter(attachment)) return attachment;
-
+    
     if (attachment.localMetadata.uploadState === 'blocked') {
       this.upsertAttachments([attachment]);
       return preUpload.state.attachment;
     }
-
+    
     attachment = {
       ...attachment,
       localMetadata: {
@@ -608,7 +609,7 @@ export class AttachmentManager {
       },
     };
     this.upsertAttachments([attachment]);
-
+    
     let response: MinimumUploadRequestResult | undefined;
     let error: Error | undefined;
     try {
@@ -616,7 +617,7 @@ export class AttachmentManager {
     } catch (err) {
       error = err instanceof Error ? err : undefined;
     }
-
+    
     const postUpload = await this.postUploadMiddlewareExecutor.execute({
       eventName: 'postProcess',
       initialValue: {
@@ -633,22 +634,22 @@ export class AttachmentManager {
       mode: 'concurrent',
     });
     attachment = postUpload.state.attachment;
-
+    
     if (postUpload.status === 'discard') {
       this.removeAttachments([attachment.localMetadata.id]);
       return attachment;
     }
-
+    
     this.updateAttachment(attachment);
     return attachment;
   };
-
+  
   uploadFiles = async (files: FileReference[] | FileList | FileLike[]) => {
     if (!this.isUploadEnabled) return;
     const iterableFiles: FileReference[] | FileLike[] = isFileList(files)
       ? Array.from(files)
       : files;
-
+    
     return await Promise.all(
       iterableFiles.slice(0, this.availableUploadSlots).map(this.uploadFile),
     );

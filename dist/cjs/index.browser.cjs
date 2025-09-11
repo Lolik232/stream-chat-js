@@ -5499,6 +5499,7 @@ var _AttachmentManager = class _AttachmentManager {
         size_limit
       } = uploadConfig;
       const sizeLimit = size_limit || DEFAULT_UPLOAD_SIZE_LIMIT_BYTES;
+      console.log(`Stream Chat: ${sizeLimit}`);
       const mimeType = fileLike.type;
       if (isFile2(fileLike) || isFileReference(fileLike)) {
         if (allowed_file_extensions?.length && !allowed_file_extensions.some(
