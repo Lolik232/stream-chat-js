@@ -28981,7 +28981,7 @@ var StreamChat = class _StreamChat {
     if (this.userAgent) {
       return this.userAgent;
     }
-    const version = "9.0.2-patched-size";
+    const version = "9.0.3-patched-size";
     const clientBundle = "node-cjs";
     let userAgentString = "";
     if (this.sdkIdentifier) {

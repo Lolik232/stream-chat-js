@@ -1,6 +1,6 @@
 {
   "name": "stream-chat",
-  "version": "9.0.2-patched-size",
+  "version": "9.0.3-patched-size",
   "description": "JS SDK for the Stream Chat API",
   "homepage": "https://getstream.io/chat/",
   "author": {
@@ -107,7 +107,6 @@
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "yarn@1.22.21+sha1.1959a18351b811cdeedbd484a8f86c3cc3bbaf72",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/GoMaxOne"
   }
